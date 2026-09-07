@@ -34,29 +34,21 @@ import {
     UncontrolledTooltip,
 } from "reactstrap";
 
-import { emailjs } from 'emailjs-com';
 const drizzleOptions = {
     contracts: [Land]
 }
 
-// var buyers = 0;
-// var sellers = 0;
-var buyerTable = [];
-var completed = true;
-
-function sendMail(email, name){
-    // alert(typeof(name));
-
+function sendMail(email, name) {
     var tempParams = {
         from_name: email,
         to_name: name,
         function: 'request and buy any land/property',
     };
-    
+
     window.emailjs.send('service_vrxa1ak', 'template_zhc8m9h', tempParams)
-    .then(function(res){
-        alert("Mail sent successfully");
-    })
+        .then(function (res) {
+            alert("Mail sent successfully");
+        })
 }
 
 class BuyerInfo extends Component {
@@ -67,16 +59,13 @@ class BuyerInfo extends Component {
             LandInstance: undefined,
             account: null,
             web3: null,
-            buyers: 0,
             verified: '',
+            buyerRows: [],
+            loadingBuyers: true,
         }
     }
 
-  
     verifyBuyer = (item) => async () => {
-        //console.log("Hello");
-        //console.log(item);
-
         await this.state.LandInstance.methods.verifyBuyer(
             item
         ).send({
@@ -86,13 +75,10 @@ class BuyerInfo extends Component {
 
         //Reload
         window.location.reload(false);
-
     }
-    
-    NotverifyBuyer = (item, email, name) => async() => {
-        // alert('Before mail');
+
+    NotverifyBuyer = (item, email, name) => async () => {
         sendMail(email, name);
-        // alert('After mail');
 
         await new Promise(resolve => setTimeout(resolve, 10000));
 
@@ -120,7 +106,6 @@ class BuyerInfo extends Component {
             const accounts = await web3.eth.getAccounts();
 
             const currentAddress = await web3.currentProvider.selectedAddress;
-            //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
             const instance = new web3.eth.Contract(
@@ -130,44 +115,62 @@ class BuyerInfo extends Component {
 
             this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
 
+            const buyersCount = await instance.methods.getBuyersCount().call();
 
-            var buyersCount = await this.state.LandInstance.methods.getBuyersCount().call();
-            console.log(buyersCount);
-           
+            const buyersMap = await instance.methods.getBuyer().call();
 
-            var buyersMap = [];
-            buyersMap = await this.state.LandInstance.methods.getBuyer().call();
-            //console.log(buyersMap);
-
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
-            //console.log(verified);
+            const verified = await instance.methods.isLandInspector(currentAddress).call();
             this.setState({ verified: verified });
 
+            // Fetch every buyer's details in parallel, then build the rows
+            // once everything has arrived, and only then setState.
+            const buyerPromises = [];
             for (let i = 0; i < buyersCount; i++) {
-                // var i =3;
-                var buyer = await this.state.LandInstance.methods.getBuyerDetails(buyersMap[i]).call();
-
-                var buyer_verify = await this.state.LandInstance.methods.isVerified(buyersMap[i]).call();
-                console.log(buyer_verify);
-                buyer.verified = buyer_verify;
-                
-                var not_verify = await this.state.LandInstance.methods.isRejected(buyersMap[i]).call();
-                console.log(not_verify);
-                buyerTable.push(<tr><td>{i + 1}</td><td>{buyersMap[i]}</td><td>{buyer[0]}</td><td>{buyer[5]}</td><td>{buyer[4]}</td><td>{buyer[1]}</td><td>{buyer[6]}</td><td>{buyer[2]}</td><td><a href={`https://ipfs.io/ipfs/${buyer[3]}`} target="_blank">Click Here</a></td>
-                    <td>{buyer.verified.toString()}</td>
-                    <td>
-                        <Button onClick={this.verifyBuyer(buyersMap[i])} disabled={buyer_verify || not_verify} className="button-vote">
-                            Verify
-                    </Button>
-                    </td>
-                    <td>
-                        <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[4], buyer[0])} disabled={buyer_verify || not_verify} className="btn btn-danger">
-                           Reject
-                    </Button>
-                    </td>
-                </tr>)
-
+                const buyerAddress = buyersMap[i];
+                buyerPromises.push(Promise.all([
+                    instance.methods.getBuyerDetails(buyerAddress).call(),
+                    instance.methods.isVerified(buyerAddress).call(),
+                    instance.methods.isRejected(buyerAddress).call(),
+                ]).then(([buyer, buyerVerified, notVerified]) => ({
+                    address: buyerAddress,
+                    buyer,
+                    buyerVerified,
+                    notVerified,
+                })));
             }
+
+            const buyers = await Promise.all(buyerPromises);
+
+            const buyerRows = buyers.map((entry, i) => (
+                <tr key={entry.address}>
+                    <td>{i + 1}</td>
+                    <td>{entry.address}</td>
+                    <td>{entry.buyer[0]}</td>
+                    <td>{entry.buyer[5]}</td>
+                    <td>{entry.buyer[4]}</td>
+                    <td>{entry.buyer[1]}</td>
+                    <td>{entry.buyer[6]}</td>
+                    <td>{entry.buyer[2]}</td>
+                    <td>
+                        <a href={`https://gateway.pinata.cloud/ipfs/${entry.buyer[3]}`} target="_blank" rel="noopener noreferrer">
+                            Click Here
+                        </a>
+                    </td>
+                    <td>{entry.buyerVerified.toString()}</td>
+                    <td>
+                        <Button onClick={this.verifyBuyer(entry.address)} disabled={entry.buyerVerified || entry.notVerified} className="button-vote">
+                            Verify
+                        </Button>
+                    </td>
+                    <td>
+                        <Button onClick={this.NotverifyBuyer(entry.address, entry.buyer[4], entry.buyer[0])} disabled={entry.buyerVerified || entry.notVerified} className="btn btn-danger">
+                            Reject
+                        </Button>
+                    </td>
+                </tr>
+            ));
+
+            this.setState({ buyerRows: buyerRows, loadingBuyers: false });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -177,8 +180,6 @@ class BuyerInfo extends Component {
             console.error(error);
         }
     };
-
-
 
     render() {
         if (!this.state.web3) {
@@ -226,28 +227,33 @@ class BuyerInfo extends Component {
                                         <CardTitle tag="h5">Buyers Info</CardTitle>
                                     </CardHeader>
                                     <CardBody>
-                                        <Table className="tablesorter" responsive color="black">
-                                            <thead className="text-primary">
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Account Address</th>
-                                                    <th>Name</th>
-                                                    <th>Age</th>
-                                                    <th>Email</th>
-                                                    <th>City</th>
-                                                    <th>Aadhar Number</th>
-                                                    <th>Pan Number</th>
-                                                    <th>Aadhar Card Document</th>
-                                                    <th>Verification Status</th>
-                                                    <th>Verify Buyer</th>
-                                                    <th>Reject Buyer</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {buyerTable}
-                                            </tbody>
-
-                                        </Table>
+                                        {this.state.loadingBuyers ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                                <Spinner animation="border" variant="primary" />
+                                            </div>
+                                        ) : (
+                                            <Table className="tablesorter" responsive color="black">
+                                                <thead className="text-primary">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Account Address</th>
+                                                        <th>Name</th>
+                                                        <th>Age</th>
+                                                        <th>Email</th>
+                                                        <th>City</th>
+                                                        <th>Aadhar Number</th>
+                                                        <th>Pan Number</th>
+                                                        <th>Aadhar Card Document</th>
+                                                        <th>Verification Status</th>
+                                                        <th>Verify Buyer</th>
+                                                        <th>Reject Buyer</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {this.state.buyerRows}
+                                                </tbody>
+                                            </Table>
+                                        )}
                                     </CardBody>
                                 </Card>
                             </Col>

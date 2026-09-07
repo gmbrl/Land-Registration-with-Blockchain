@@ -42,11 +42,13 @@ class AddLand extends Component {
       surveyNum: '',
       buffer2: null,
       document: '',
+      uploading: false,
     }
     this.captureFile = this.captureFile.bind(this);
     this.addimage = this.addimage.bind(this);
     this.captureDoc = this.captureDoc.bind(this);
     this.addDoc = this.addDoc.bind(this);
+    this.addLand = this.addLand.bind(this);
   }
 
   componentDidMount = async () => {
@@ -90,52 +92,58 @@ class AddLand extends Component {
     }
   };
 
+  // Uploads the land image to IPFS via Pinata and stores the returned CID.
   addimage = async () => {
-    // alert('In add image')
-    await ipfs.files.add(this.state.buffer, (error, result) => {
-      if (error) {
-        alert(error)
-        return
-      }
-
-      alert(result[0].hash)
-      this.setState({ ipfsHash: result[0].hash });
-      console.log('ipfsHash:', this.state.ipfsHash);
-    })
+    if (!this.state.buffer) {
+      throw new Error('No land image selected.');
+    }
+    const hash = await ipfs.addFile(this.state.buffer, 'land-image');
+    this.setState({ ipfsHash: hash });
+    console.log('ipfsHash:', hash);
+    return hash;
   }
-  addDoc = async () => {
-    // alert('In add image')
-    await ipfs.files.add(this.state.buffer2, (error, result) => {
-      if (error) {
-        alert(error)
-        return
-      }
 
-      alert(result[0].hash)
-      this.setState({ document: result[0].hash });
-      console.log('document:', this.state.document);
-    })
+  // Uploads the Aadhaar document to IPFS via Pinata and stores the returned CID.
+  addDoc = async () => {
+    if (!this.state.buffer2) {
+      throw new Error('No document selected.');
+    }
+    const hash = await ipfs.addFile(this.state.buffer2, 'land-document');
+    this.setState({ document: hash });
+    console.log('document:', hash);
+    return hash;
   }
 
   //QmYdztkcPJLmGmwLmM4nyBfVatoBMRDuUjmgBupjmTodAP
   addLand = async () => {
-    this.addimage();
-    this.addDoc();
-    // alert('After add image')
-    await new Promise(resolve => setTimeout(resolve, 15000));
-    if (this.state.area == '' || this.state.city == '' || this.state.stateLoc == '' || this.state.price == '' || this.state.propertyPID == '' || this.state.surveyNum == '') {
+    // Validate the text fields up front, before touching IPFS or the chain.
+    if (this.state.area === '' || this.state.city === '' || this.state.stateLoc === '' || this.state.price === '' || this.state.propertyPID === '' || this.state.surveyNum === '') {
       alert("All the fields are compulsory!");
-    } else if ((!Number(this.state.area)) || (!Number(this.state.price))) {
+      return;
+    }
+    if ((!Number(this.state.area)) || (!Number(this.state.price))) {
       alert("Land area and Price of Land must be a number!");
-    } else {
+      return;
+    }
+    if (!this.state.buffer || !this.state.buffer2) {
+      alert("Please select both the land image and the document.");
+      return;
+    }
+
+    this.setState({ uploading: true });
+
+    try {
+      // Upload image and document to IPFS in parallel, then wait for both.
+      await Promise.all([this.addimage(), this.addDoc()]);
+
       await this.state.LandInstance.methods.addLand(
         this.state.area,
         this.state.city,
         this.state.stateLoc,
-        this.state.price, 
+        this.state.price,
         this.state.propertyPID,
         this.state.surveyNum,
-        this.state.ipfsHash, 
+        this.state.ipfsHash,
         this.state.document)
         .send({
           from: this.state.account,
@@ -146,6 +154,11 @@ class AddLand extends Component {
 
       //Reload
       window.location.reload(false);
+    } catch (error) {
+      alert('Failed to add land: ' + error.message);
+      console.error(error);
+    } finally {
+      this.setState({ uploading: false });
     }
   }
   // _city,string  _state, uint landPrice, uint _propertyPID,uint _surveyNum,string memory _ipfsHash
@@ -341,8 +354,8 @@ class AddLand extends Component {
                 </Form>
               </CardBody>
               <CardFooter>
-                <Button className="btn-fill" color="primary" onClick={this.addLand}>
-                  Add Land
+                <Button className="btn-fill" color="primary" onClick={this.addLand} disabled={this.state.uploading}>
+                  {this.state.uploading ? <Spinner animation="border" size="sm" /> : 'Add Land'}
                 </Button>
               </CardFooter>
             </Card>

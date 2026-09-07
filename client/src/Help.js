@@ -4,6 +4,7 @@ import './index.css';
 import Faq from "react-faq-component";
 import "../node_modules/video-react/dist/video-react.css";
 import ReactPlayer from 'react-player';
+import AIExplainer from "./AIExplainer";
 // import video from "../src/assets/img/video.mkv";
 
 const data = {
@@ -16,7 +17,7 @@ const data = {
         {
             title: "How can I understand the working of the system?",
             content:
-                "You can watch the demo video uploaded above on this page.",
+                "You can watch the AI explainer above on this page.",
         },
         {
             title: "Where can I find this project source code?",
@@ -70,9 +71,7 @@ export default function Help() {
 
             <div className="container">
                 <h1>Demo</h1>
-                <div className="embed-responsive embed-responsive-16by9">
-                    <iframe className="embed-responsive-item" src="https://www.youtube.com/embed/6VLaAa8GNDc" allowfullscreen="true"></iframe>
-                </div>
+                <AIExplainer />
 
                 <div style={{ marginTop: "10px" }}>
                     <Faq

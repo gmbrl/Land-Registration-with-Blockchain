@@ -33,11 +33,6 @@ const drizzleOptions = {
     contracts: [Land]
 }
 
-
-var sellersCount;
-var sellersMap = [];
-var sellerTable = [];
-
 class SellerInfo extends Component {
     constructor(props) {
         super(props)
@@ -46,16 +41,13 @@ class SellerInfo extends Component {
             LandInstance: undefined,
             account: null,
             web3: null,
-            sellers: 0,
             verified: '',
-            not_verified: '',
+            sellerRows: [],
+            loadingSellers: true,
         }
     }
 
     verifySeller = (item) => async () => {
-        //console.log("Hello");
-        //console.log(item);
-
         await this.state.LandInstance.methods.verifySeller(
             item
         ).send({
@@ -65,11 +57,9 @@ class SellerInfo extends Component {
 
         //Reload
         window.location.reload(false);
-
     }
 
-    NotverifySeller = (item) => async() => {
-
+    NotverifySeller = (item) => async () => {
         await this.state.LandInstance.methods.rejectSeller(
             item
         ).send({
@@ -94,7 +84,6 @@ class SellerInfo extends Component {
             const accounts = await web3.eth.getAccounts();
 
             const currentAddress = await web3.currentProvider.selectedAddress;
-            //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
             const instance = new web3.eth.Contract(
@@ -104,50 +93,61 @@ class SellerInfo extends Component {
 
             this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
 
+            const sellersCount = await instance.methods.getSellersCount().call();
 
-            sellersCount = await this.state.LandInstance.methods.getSellersCount().call();
-            console.log(sellersCount);
+            const sellersMap = await instance.methods.getSeller().call();
 
-            
-            
-            sellersMap = await this.state.LandInstance.methods.getSeller().call();
-            
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
-            //console.log(verified);
+            const verified = await instance.methods.isLandInspector(currentAddress).call();
             this.setState({ verified: verified });
 
-
+            // Fetch every seller's details in parallel, then build the rows
+            // once everything has arrived, and only then setState.
+            const sellerPromises = [];
             for (let i = 0; i < sellersCount; i++) {
-                var seller = await this.state.LandInstance.methods.getSellerDetails(sellersMap[i]).call();
-                console.log(seller);
-                var seller_verify = await this.state.LandInstance.methods.isVerified(sellersMap[i]).call();
-                console.log(seller_verify);
-                seller.verified = seller_verify;
-                
-                //seller.push(seller_verify);
-                var not_verify = await this.state.LandInstance.methods.isRejected(sellersMap[i]).call();
-                console.log(not_verify);
-
-
-
-                sellerTable.push(<tr><td>{i + 1}</td><td>{sellersMap[i]}</td><td>{seller[0]}</td><td>{seller[1]}</td><td>{seller[2]}</td><td>{seller[3]}</td><td>{seller[4]}</td><td><a href={`https://ipfs.io/ipfs/${seller[5]}`} target="_blank">Click Here</a></td>
-                    <td>{seller.verified.toString()}</td>
-                    <td>
-                        <Button onClick={this.verifySeller(sellersMap[i])} disabled={seller_verify || not_verify} className="button-vote">
-                            Verify
-                    </Button>
-                    </td>
-                    <td>
-                        <Button onClick={this.NotverifySeller(sellersMap[i])} disabled={seller_verify || not_verify} className="btn btn-danger">
-                        Reject
-                    </Button>
-                    </td></tr>)
-            console.log(seller[5]);
-
-
+                const sellerAddress = sellersMap[i];
+                sellerPromises.push(Promise.all([
+                    instance.methods.getSellerDetails(sellerAddress).call(),
+                    instance.methods.isVerified(sellerAddress).call(),
+                    instance.methods.isRejected(sellerAddress).call(),
+                ]).then(([seller, sellerVerified, notVerified]) => ({
+                    address: sellerAddress,
+                    seller,
+                    sellerVerified,
+                    notVerified,
+                })));
             }
 
+            const sellers = await Promise.all(sellerPromises);
 
+            const sellerRows = sellers.map((entry, i) => (
+                <tr key={entry.address}>
+                    <td>{i + 1}</td>
+                    <td>{entry.address}</td>
+                    <td>{entry.seller[0]}</td>
+                    <td>{entry.seller[1]}</td>
+                    <td>{entry.seller[2]}</td>
+                    <td>{entry.seller[3]}</td>
+                    <td>{entry.seller[4]}</td>
+                    <td>
+                        <a href={`https://gateway.pinata.cloud/ipfs/${entry.seller[5]}`} target="_blank" rel="noopener noreferrer">
+                            Click Here
+                        </a>
+                    </td>
+                    <td>{entry.sellerVerified.toString()}</td>
+                    <td>
+                        <Button onClick={this.verifySeller(entry.address)} disabled={entry.sellerVerified || entry.notVerified} className="button-vote">
+                            Verify
+                        </Button>
+                    </td>
+                    <td>
+                        <Button onClick={this.NotverifySeller(entry.address)} disabled={entry.sellerVerified || entry.notVerified} className="btn btn-danger">
+                            Reject
+                        </Button>
+                    </td>
+                </tr>
+            ));
+
+            this.setState({ sellerRows: sellerRows, loadingSellers: false });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -157,8 +157,6 @@ class SellerInfo extends Component {
             console.error(error);
         }
     };
-
-
 
     render() {
         if (!this.state.web3) {
@@ -206,27 +204,33 @@ class SellerInfo extends Component {
                                         <CardTitle tag="h4">Sellers Info</CardTitle>
                                     </CardHeader>
                                     <CardBody>
-                                        <Table sclassName="tablesorter" responsive color="black">
-                                            <thead className="text-primary">
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Account Address</th>
-                                                    <th>Name</th>
-                                                    <th>Age</th>
-                                                    <th>Aadhar Number</th>
-                                                    <th>Pan Number</th>
-                                                    <th>Owned Lands</th>
-                                                    <th>Aadhar Card Document</th>
-                                                    <th>Verification Status</th>
-                                                    <th>Verify Seller</th>
-                                                    <th>Reject Seller</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {sellerTable}
-                                            </tbody>
+                                        {this.state.loadingSellers ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                                <Spinner animation="border" variant="primary" />
+                                            </div>
+                                        ) : (
+                                            <Table className="tablesorter" responsive color="black">
+                                                <thead className="text-primary">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Account Address</th>
+                                                        <th>Name</th>
+                                                        <th>Age</th>
+                                                        <th>Aadhar Number</th>
+                                                        <th>Pan Number</th>
+                                                        <th>Owned Lands</th>
+                                                        <th>Aadhar Card Document</th>
+                                                        <th>Verification Status</th>
+                                                        <th>Verify Seller</th>
+                                                        <th>Reject Seller</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {this.state.sellerRows}
+                                                </tbody>
 
-                                        </Table>
+                                            </Table>
+                                        )}
                                     </CardBody>
                                 </Card>
                             </Col>

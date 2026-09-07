@@ -185,7 +185,7 @@ class Dashboard extends Component {
                 <Col lg="12" md="12">
                   <Card>
                     <CardHeader>
-                      <CardTitle tag="h4">Payment for Lands<span className="duration">₹ 1 = 0.0000057 Ether</span></CardTitle>
+                      <CardTitle tag="h4">Payment for Lands<span className="duration">Ksh 1 = 0.0000057 Ether</span></CardTitle>
 
                     </CardHeader>
                     <CardBody>
@@ -194,7 +194,7 @@ class Dashboard extends Component {
                           <tr>
                             <th>#</th>
                             <th>Land Owner</th>
-                            <th>Price ( in ₹ )</th>
+                            <th>Price ( in Ksh )</th>
                             <th>Make Payment</th>
                           </tr>
                         </thead>

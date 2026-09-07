@@ -8,19 +8,18 @@
     "@testing-library/jest-dom": "^5.11.10",
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^12.8.3",
+    "axios": "^1.18.1",
     "bootstrap": "^4.6.0",
     "chart.js": "2.9.4",
     "classnames": "2.2.6",
-    "drizzle": "^1.4.0",
-    "drizzle-react": "^1.3.0",
-    "drizzle-react-components": "^1.4.0",
+    "drizzle": "1.4.0",
+    "drizzle-react": "1.3.0",
+    "drizzle-react-components": "1.4.0",
     "emailjs-com": "^2.6.4",
     "history": "^5.0.0",
     "ipfs-api": "^26.1.2",
     "material-table": "^1.69.2",
     "next": "9.4.4",
-    "node-sass": "4.14.1",
-    "node-sass-package-importer": "5.3.2",
     "perfect-scrollbar": "1.5.0",
     "prop-types": "15.7.2",
     "react": "^17.0.2",
@@ -65,5 +64,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "sass": "^1.101.0"
   }
 }
