@@ -34545,10 +34545,17 @@
       "links": {},
       "address": "0x5dEf84Ece93dCb0f78200F0CF9D321b07AC08B6d",
       "transactionHash": "0x10de1dddf29b5c20e8b5b4ce9bb89e42f305357b113de4c47ee71a5d68ed78b2"
+    },
+    "11155111": {
+      "events": {},
+      "links": {},
+      "address": "0xcfc1B3E100E476B0497C5Ad01C96ae97E085121A",
+      "transactionHash": "0x853d8be39b425a0b9ff39e954bbcd7c764c68208d6a18a6a4d97bf0e86b6dfe3"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-09-07T13:26:59.063Z",
+  "updatedAt": "2026-09-08T00:14:03.885Z",
+  "networkType": "ethereum",
   "devdoc": {
     "methods": {}
   },

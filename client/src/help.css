@@ -22,6 +22,83 @@
   color: #fff;
 }
 
+.help-nav {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  right: max(7vw, 32px);
+  left: max(7vw, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 0;
+}
+
+.help-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.brand-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(129, 140, 248, 0.28);
+  color: #c7d2fe;
+  font-size: 0.8rem;
+}
+
+.help-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  margin-left: auto;
+  margin-right: 42px;
+}
+
+.help-nav-links a {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.help-nav-links a:hover {
+  color: #fff;
+}
+
+.nav-dashboard-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.nav-dashboard-button:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
 .help-hero::before,
 .help-hero::after {
   position: absolute;
@@ -48,6 +125,7 @@
   position: relative;
   z-index: 2;
   max-width: 690px;
+  padding-top: 60px;
 }
 
 .help-eyebrow {
@@ -137,6 +215,27 @@
   width: 360px;
   height: 300px;
   margin: 0 5vw 0 30px;
+}
+
+.blockchain-hero-image {
+  position: absolute;
+  top: -24px;
+  left: 28px;
+  width: 310px;
+  height: 310px;
+  border-radius: 50%;
+  object-fit: cover;
+  opacity: 0.84;
+  mix-blend-mode: screen;
+  filter: saturate(1.15) contrast(1.05);
+  -webkit-mask-image: radial-gradient(circle, #000 47%, transparent 74%);
+  mask-image: radial-gradient(circle, #000 47%, transparent 74%);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.help-hero-decoration:hover .blockchain-hero-image {
+  opacity: 1;
+  transform: scale(1.04) rotate(2deg);
 }
 
 .decoration-orbit {
@@ -408,6 +507,15 @@
     display: none;
   }
 
+  .help-nav-links {
+    display: none;
+  }
+
+  .help-nav {
+    right: 32px;
+    left: 32px;
+  }
+
   .help-content {
     padding: 64px 0;
   }
@@ -431,6 +539,19 @@
 
   .help-hero h1 {
     font-size: 3.1rem;
+  }
+
+  .help-nav {
+    right: 24px;
+    left: 24px;
+  }
+
+  .nav-dashboard-button {
+    padding: 9px 12px;
+  }
+
+  .nav-dashboard-button span {
+    display: none;
   }
 
   .help-hero-stats {

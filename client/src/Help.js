@@ -79,21 +79,39 @@ function Help() {
   return (
     <main className="help-page">
       <section className="help-hero">
-        <div className="help-hero-content">
+        <header className="help-nav">
           <button
             type="button"
-            className="back-dashboard-button"
+            className="help-brand"
             onClick={goToDashboard}
           >
-            <span aria-hidden="true">←</span>
-            Back to Dashboard
+            <span className="brand-mark">◆</span>
+            <span>LandChain</span>
           </button>
 
-          <span className="help-eyebrow">SUPPORT CENTER</span>
+          <nav className="help-nav-links" aria-label="Help navigation">
+            <a href="#how-it-works">How it works</a>
+            <a href="#faq">FAQ</a>
+            <a href="https://github.com/gmbrl/SE-Project" target="_blank" rel="noreferrer">
+              Source code
+            </a>
+          </nav>
+
+          <button
+            type="button"
+            className="nav-dashboard-button"
+            onClick={goToDashboard}
+          >
+            Dashboard <span aria-hidden="true">↗</span>
+          </button>
+        </header>
+
+        <div className="help-hero-content">
+          <span className="help-eyebrow">BLOCKCHAIN LAND REGISTRATION</span>
 
           <h1>
-            Everything you need
-            <span> to get started.</span>
+            Secure records.
+            <span>Simple transactions.</span>
           </h1>
 
           <p>
@@ -133,7 +151,7 @@ function Help() {
       </section>
 
       <section className="help-content">
-        <div className="process-strip">
+        <div className="process-strip" id="how-it-works">
           <div className="process-intro">
             <span className="help-eyebrow">AT A GLANCE</span>
             <h2>How it works</h2>
@@ -167,7 +185,7 @@ function Help() {
           </div>
         </div>
 
-        <div className="section-heading">
+        <div className="section-heading" id="faq">
           <span className="help-eyebrow">FAQ</span>
           <h2>Frequently asked questions</h2>
           <p>

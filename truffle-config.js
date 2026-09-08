@@ -30,17 +30,20 @@ module.exports = {
       network_id: "*",
     },
     sepolia: {
-      provider: () => new HDWalletProvider(
-        process.env.DEPLOYER_PRIVATE_KEY,
-        `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`
-      ),
-      network_id: 11155111,
-      gas: 5500000,
-      gasPrice: 20000000000,
-      confirmations: 2,
-      timeoutBlocks: 200,
-      skipDryRun: true
-    }
+  provider: () => new HDWalletProvider(
+    process.env.DEPLOYER_PRIVATE_KEY,
+    `https://eth-sepolia.g.alchemy.com/v2/${process.env.INFURA_API_KEY}`,
+    0,
+    1
+  ),
+  network_id: 11155111,
+  gas: 5500000,
+  gasPrice: 2000000000,  // Changed from 20000000000 to 2000000000 (2 gwei)
+  confirmations: 2,
+  timeoutBlocks: 200,
+  skipDryRun: true,
+  networkCheckTimeout: 10000
+},
   },
 
   mocha: {
